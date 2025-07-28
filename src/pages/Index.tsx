@@ -85,15 +85,6 @@ const Index = () => {
                       </div>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowEarlyAccessModal(true)}
-                      className="text-gray-700 hover:text-green-600"
-                    >
-                      Early Access
-                    </Button>
-                  </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
               
