@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Leaf, DollarSign, Shield, Home, Brain, Users, Trophy, Menu } from "lucide-react";
+import { Zap, Leaf, DollarSign, Shield, Home, Brain, Users, Trophy, Menu, BookOpen, Wind } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";
@@ -338,6 +338,174 @@ const Index = () => {
             <div>
               <div className="text-4xl md:text-5xl font-bold mb-2">24/7</div>
               <div className="text-xl">Energy Monitoring</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Challenges Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Take on Real-World <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600">Energy Challenges</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+              Test your skills with scenarios from around the globe. Each challenge teaches you the complexities of designing sustainable energy systems.
+            </p>
+          </div>
+          
+          <div className="relative">
+            {/* Challenge Cards Slider */}
+            <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory">
+              {/* School Kenya Challenge */}
+              <Card className="min-w-[320px] md:min-w-[380px] hover:shadow-lg transition-all duration-300 cursor-pointer snap-start group">
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 bg-yellow-100 rounded-lg">
+                      <BookOpen className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">Beginner</Badge>
+                  </div>
+                  <CardTitle className="text-lg">🏫 Power a Rural School in Kenya</CardTitle>
+                  <CardDescription>
+                    Design a solar microgrid for 200 students. Balance cost with reliability for uninterrupted learning.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span>$15,000</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span>1,247 participants</span>
+                    </div>
+                  </div>
+                  <Link to="/challenges">
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white group-hover:shadow-md transition-all">
+                      Take Challenge
+                      <Trophy className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              {/* Refugee Camp Challenge */}
+              <Card className="min-w-[320px] md:min-w-[380px] hover:shadow-lg transition-all duration-300 cursor-pointer snap-start group">
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 bg-orange-100 rounded-lg">
+                      <Users className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <Badge className="bg-yellow-100 text-yellow-800">Intermediate</Badge>
+                  </div>
+                  <CardTitle className="text-lg">🏕️ Refugee Camp Emergency Power</CardTitle>
+                  <CardDescription>
+                    Rapid deployment system for 5,000 people. Must work in extreme conditions with minimal maintenance.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span>$50,000</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span>743 participants</span>
+                    </div>
+                  </div>
+                  <Link to="/challenges">
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white group-hover:shadow-md transition-all">
+                      Take Challenge
+                      <Trophy className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              {/* Eco Community Challenge */}
+              <Card className="min-w-[320px] md:min-w-[380px] hover:shadow-lg transition-all duration-300 cursor-pointer snap-start group">
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <Wind className="w-6 h-6 text-green-600" />
+                    </div>
+                    <Badge className="bg-red-100 text-red-800">Advanced</Badge>
+                  </div>
+                  <CardTitle className="text-lg">🏠 Off-Grid Eco Community</CardTitle>
+                  <CardDescription>
+                    100% renewable microgrid for 50 families. Zero emissions, maximum resilience, smart grid integration.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span>$200,000</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span>298 participants</span>
+                    </div>
+                  </div>
+                  <Link to="/challenges">
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white group-hover:shadow-md transition-all">
+                      Take Challenge
+                      <Trophy className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              {/* Island Resort Challenge */}
+              <Card className="min-w-[320px] md:min-w-[380px] hover:shadow-lg transition-all duration-300 cursor-pointer snap-start group">
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Zap className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <Badge className="bg-yellow-100 text-yellow-800">Intermediate</Badge>
+                  </div>
+                  <CardTitle className="text-lg">🏝️ Sustainable Island Resort</CardTitle>
+                  <CardDescription>
+                    Replace diesel generators with clean energy for a tropical resort. Tourism meets sustainability.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span>$75,000</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span>567 participants</span>
+                    </div>
+                  </div>
+                  <Link to="/challenges">
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white group-hover:shadow-md transition-all">
+                      Take Challenge
+                      <Trophy className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="text-center mt-8">
+              <Link to="/challenges">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="text-lg px-8 py-3 border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  View All Challenges
+                  <Trophy className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
