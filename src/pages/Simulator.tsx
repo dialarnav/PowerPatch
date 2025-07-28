@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import LocationSelector from "@/components/LocationSelector";
+import AIAssistant from "@/components/AIAssistant";
 import { 
   Sun, 
   Wind, 
@@ -18,10 +20,21 @@ import {
   Share2,
   RefreshCw,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  MapPin
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+
+interface Location {
+  country: string;
+  state?: string;
+  region: string;
+  costMultiplier: number;
+  currency: string;
+  laborCost: number;
+  shippingCost: number;
+}
 
 interface Component {
   id: string;
@@ -79,21 +92,29 @@ const availableComponents: Omit<Component, 'id' | 'count'>[] = [
 
 const Simulator = () => {
   const [selectedComponents, setSelectedComponents] = useState<Component[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const { toast } = useToast();
 
+  const getLocationAdjustedCost = useCallback((baseCost: number) => {
+    if (!selectedLocation) return baseCost;
+    return Math.round(baseCost * selectedLocation.costMultiplier);
+  }, [selectedLocation]);
+
   const addComponent = useCallback((component: Omit<Component, 'id' | 'count'>) => {
+    const adjustedCost = getLocationAdjustedCost(component.cost);
     const newComponent: Component = {
       ...component,
       id: Math.random().toString(36).substr(2, 9),
+      cost: adjustedCost,
       count: 1
     };
     setSelectedComponents(prev => [...prev, newComponent]);
     toast({
       title: "Component Added",
-      description: `${component.name} added to your microgrid.`,
+      description: `${component.name} added${selectedLocation ? ` (${selectedLocation.country} pricing)` : ''}.`,
     });
-  }, [toast]);
+  }, [toast, getLocationAdjustedCost, selectedLocation]);
 
   const removeComponent = useCallback((id: string) => {
     setSelectedComponents(prev => prev.filter(comp => comp.id !== id));
@@ -112,6 +133,31 @@ const Simulator = () => {
       prev.map(comp => comp.id === id ? { ...comp, count } : comp)
     );
   }, [removeComponent]);
+
+  const handleLocationChange = useCallback((location: Location) => {
+    setSelectedLocation(location);
+    
+    // Update existing components with new pricing
+    setSelectedComponents(prev => 
+      prev.map(comp => ({
+        ...comp,
+        cost: getLocationAdjustedCost(
+          comp.type === 'solar' ? 3000 :
+          comp.type === 'wind' ? 8000 :
+          comp.type === 'battery' ? 5000 : 2000
+        )
+      }))
+    );
+    
+    toast({
+      title: "Location Updated",
+      description: `Pricing updated for ${location.country}${location.state ? `, ${location.state}` : ''}.`,
+    });
+  }, [getLocationAdjustedCost, toast]);
+
+  const handleAIComponentsGenerated = useCallback((components: Component[]) => {
+    setSelectedComponents(components);
+  }, []);
 
   const calculateStats = useCallback((): GridStats => {
     const stats = selectedComponents.reduce(
@@ -231,7 +277,21 @@ const Simulator = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Left Sidebar - Location & AI */}
+          <div className="lg:col-span-1 space-y-6">
+            <LocationSelector
+              selectedLocation={selectedLocation}
+              onLocationChange={handleLocationChange}
+            />
+            
+            <AIAssistant
+              location={selectedLocation}
+              onComponentsGenerated={handleAIComponentsGenerated}
+              currentComponents={selectedComponents}
+            />
+          </div>
+
           {/* Component Library */}
           <div className="lg:col-span-1">
             <Card>
@@ -245,45 +305,80 @@ const Simulator = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {availableComponents.map((component, index) => (
-                  <Card 
-                    key={index}
-                    className="cursor-pointer hover:shadow-card transition-all duration-200 border-2 border-dashed border-muted hover:border-primary"
-                    onClick={() => addComponent(component)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        {getIconForType(component.type)}
-                        <div className="flex-1">
-                          <h3 className="font-medium text-sm">{component.name}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {component.power > 0 ? `${component.power}kW` : 'Storage'}
-                          </p>
+                {availableComponents.map((component, index) => {
+                  const adjustedCost = getLocationAdjustedCost(component.cost);
+                  const costDifference = adjustedCost - component.cost;
+                  
+                  return (
+                    <Card 
+                      key={index}
+                      className="cursor-pointer hover:shadow-card transition-all duration-200 border-2 border-dashed border-muted hover:border-primary"
+                      onClick={() => addComponent(component)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          {getIconForType(component.type)}
+                          <div className="flex-1">
+                            <h3 className="font-medium text-sm">{component.name}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {component.power > 0 ? `${component.power}kW` : 'Storage'}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Cost: </span>
-                          <span className="font-medium">${component.cost.toLocaleString()}</span>
+                        <div className="grid grid-cols-1 gap-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Base Cost:</span>
+                            <span className="font-medium">${component.cost.toLocaleString()}</span>
+                          </div>
+                          {selectedLocation && costDifference !== 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Local Cost:</span>
+                              <span className={`font-medium ${costDifference > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                ${adjustedCost.toLocaleString()}
+                                <span className="text-xs ml-1">
+                                  ({costDifference > 0 ? '+' : ''}${costDifference.toLocaleString()})
+                                </span>
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Reliability:</span>
+                            <span className="font-medium">{component.reliability}%</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">Reliability: </span>
-                          <span className="font-medium">{component.reliability}%</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </CardContent>
             </Card>
           </div>
 
           {/* Main Design Area */}
           <div className="lg:col-span-2">
+            {!selectedLocation && (
+              <Card className="mb-6 border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-orange-600" />
+                    <div>
+                      <div className="font-medium text-orange-800 dark:text-orange-200">
+                        Select Location for Accurate Pricing
+                      </div>
+                      <div className="text-sm text-orange-700 dark:text-orange-300">
+                        Component costs vary significantly by location. Select your project location for realistic estimates.
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <Tabs defaultValue="design" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="design">Design</TabsTrigger>
                 <TabsTrigger value="analysis">Analysis</TabsTrigger>
+                <TabsTrigger value="location">Location & AI</TabsTrigger>
               </TabsList>
 
               <TabsContent value="design" className="space-y-6">
@@ -363,6 +458,12 @@ const Simulator = () => {
                       <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" />
                         Quick Overview
+                        {selectedLocation && (
+                          <Badge variant="outline" className="ml-2">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {selectedLocation.country}
+                          </Badge>
+                        )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -372,8 +473,15 @@ const Simulator = () => {
                           <div className="text-sm text-muted-foreground">Total Power</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">${stats.totalCost.toLocaleString()}</div>
-                          <div className="text-sm text-muted-foreground">Total Cost</div>
+                          <div className="text-2xl font-bold text-green-600">
+                            ${stats.totalCost.toLocaleString()}
+                            {selectedLocation && selectedLocation.currency !== 'USD' && (
+                              <div className="text-xs text-muted-foreground">{selectedLocation.currency}</div>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Total Cost {selectedLocation && `(${selectedLocation.country})`}
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-blue-600">{stats.reliability}%</div>
@@ -384,6 +492,15 @@ const Simulator = () => {
                           <div className="text-sm text-muted-foreground">CO₂/year</div>
                         </div>
                       </div>
+                      
+                      {selectedLocation && (
+                        <div className="mt-4 p-3 bg-muted rounded-lg">
+                          <div className="text-sm text-muted-foreground">
+                            <strong>Location Factors:</strong> Cost multiplier {selectedLocation.costMultiplier}x, 
+                            Labor ${selectedLocation.laborCost}/hr, Shipping ${selectedLocation.shippingCost}/kg
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -584,6 +701,19 @@ const Simulator = () => {
                     </Card>
                   </>
                 )}
+              </TabsContent>
+
+              <TabsContent value="location" className="space-y-6 lg:hidden">
+                <LocationSelector
+                  selectedLocation={selectedLocation}
+                  onLocationChange={handleLocationChange}
+                />
+                
+                <AIAssistant
+                  location={selectedLocation}
+                  onComponentsGenerated={handleAIComponentsGenerated}
+                  currentComponents={selectedComponents}
+                />
               </TabsContent>
             </Tabs>
           </div>
