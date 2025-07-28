@@ -3,12 +3,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Zap, Sun, Wind, Battery, Globe, Users, Target, BookOpen, Award, ArrowRight, Play, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import EarlyAccessModal from "@/components/EarlyAccessModal";
+import PartnerModal from "@/components/PartnerModal";
 import heroImage from "@/assets/hero-energy.jpg";
 import solarIcon from "@/assets/solar-icon.png";
 import windIcon from "@/assets/wind-icon.png";
 import batteryIcon from "@/assets/battery-icon.png";
 
 const Index = () => {
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    // Simulate newsletter signup
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    toast({
+      title: "Subscribed!",
+      description: "Thank you for subscribing to PowerPatch updates.",
+    });
+    setEmail('');
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   return (
     <div className="min-h-screen bg-gradient-section">
       {/* Hero Section */}
@@ -36,11 +64,18 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button variant="hero" size="lg" className="text-lg px-8 py-4">
-              <Play className="mr-2 h-5 w-5" />
-              Launch Simulator
-            </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20">
+            <Link to="/simulator">
+              <Button variant="hero" size="lg" className="text-lg px-8 py-4">
+                <Play className="mr-2 h-5 w-5" />
+                Launch Simulator
+              </Button>
+            </Link>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20"
+              onClick={() => scrollToSection('how-it-works')}
+            >
               <BookOpen className="mr-2 h-5 w-5" />
               Learn How It Works
             </Button>
@@ -64,7 +99,7 @@ const Index = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4" variant="outline">
@@ -253,10 +288,12 @@ const Index = () => {
                   <span>Budget: $15,000</span>
                   <span>Duration: 2 weeks</span>
                 </div>
-                <Button variant="energy" className="w-full">
-                  Accept Challenge
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <Link to="/challenge/school-kenya">
+                  <Button variant="energy" className="w-full">
+                    Accept Challenge
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -278,10 +315,12 @@ const Index = () => {
                   <span>Budget: $50,000</span>
                   <span>Duration: 1 week</span>
                 </div>
-                <Button variant="energy" className="w-full">
-                  Accept Challenge
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <Link to="/challenge/refugee-camp">
+                  <Button variant="energy" className="w-full">
+                    Accept Challenge
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -303,10 +342,12 @@ const Index = () => {
                   <span>Budget: $200,000</span>
                   <span>Duration: 1 month</span>
                 </div>
-                <Button variant="energy" className="w-full">
-                  Accept Challenge
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <Link to="/challenge/eco-community">
+                  <Button variant="energy" className="w-full">
+                    Accept Challenge
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
@@ -315,10 +356,12 @@ const Index = () => {
             <p className="text-lg text-muted-foreground mb-6">
               🎖️ Earn badges, compete with others, and climb the leaderboard as a microgrid innovator.
             </p>
-            <Button variant="outline" size="lg">
-              <Award className="mr-2 h-5 w-5" />
-              View All Challenges
-            </Button>
+            <Link to="/challenges">
+              <Button variant="outline" size="lg">
+                <Award className="mr-2 h-5 w-5" />
+                View All Challenges
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -344,26 +387,33 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button variant="hero" size="lg" className="bg-white text-primary hover:bg-gray-100">
-              ✨ Get Early Access
-            </Button>
-            <Button variant="outline" size="lg" className="bg-white/10 text-white border-white/30 hover:bg-white/20">
-              🤝 Partner With Us
-            </Button>
+            <EarlyAccessModal>
+              <Button variant="hero" size="lg" className="bg-white text-primary hover:bg-gray-100">
+                ✨ Get Early Access
+              </Button>
+            </EarlyAccessModal>
+            <PartnerModal>
+              <Button variant="outline" size="lg" className="bg-white/10 text-white border-white/30 hover:bg-white/20">
+                🤝 Partner With Us
+              </Button>
+            </PartnerModal>
           </div>
           
           <div className="max-w-md mx-auto">
             <p className="text-white mb-4">📬 Subscribe for Updates</p>
-            <div className="flex gap-2">
+            <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
               <Input 
                 type="email" 
-                placeholder="Enter your email" 
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="bg-white/10 border-white/30 text-white placeholder:text-gray-300"
+                required
               />
-              <Button variant="hero" className="bg-white text-primary hover:bg-gray-100">
+              <Button type="submit" variant="hero" className="bg-white text-primary hover:bg-gray-100">
                 Subscribe
               </Button>
-            </div>
+            </form>
           </div>
         </div>
       </section>
