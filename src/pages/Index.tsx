@@ -88,15 +88,6 @@ const Index = () => {
                   <NavigationMenuItem>
                     <Button
                       variant="ghost"
-                      onClick={() => setShowPartnerModal(true)}
-                      className="text-gray-700 hover:text-green-600"
-                    >
-                      Partners
-                    </Button>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <Button
-                      variant="ghost"
                       onClick={() => setShowEarlyAccessModal(true)}
                       className="text-gray-700 hover:text-green-600"
                     >
