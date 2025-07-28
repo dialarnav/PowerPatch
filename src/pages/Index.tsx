@@ -108,7 +108,7 @@ const Index = () => {
               
               <Button
                 onClick={handleGetStarted}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 shadow-md"
               >
                 <Brain className="h-4 w-4" />
                 AI House Scan
@@ -194,7 +194,7 @@ const Index = () => {
                   handleGetStarted();
                   setMobileMenuOpen(false);
                 }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 shadow-md"
               >
                 <Brain className="h-4 w-4" />
                 AI House Scan
