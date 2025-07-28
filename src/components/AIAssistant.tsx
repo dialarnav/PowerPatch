@@ -7,16 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Bot, 
   Lightbulb, 
   Send, 
-  Settings, 
   Zap,
   Sun,
   Wind,
   Battery,
-  AlertCircle,
   CheckCircle,
   Loader2
 } from "lucide-react";
@@ -61,8 +60,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   onComponentsGenerated, 
   currentComponents 
 }) => {
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSuggestion, setLastSuggestion] = useState<any>(null);
   const { toast } = useToast();
@@ -95,16 +92,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   const generateAISuggestion = async () => {
-    if (!apiKey) {
-      setShowApiKeyInput(true);
-      toast({
-        title: "API Key Required",
-        description: "Please enter your OpenAI API key to use AI suggestions.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (!location) {
       toast({
         title: "Location Required",
@@ -148,15 +135,19 @@ AVAILABLE COMPONENTS (base costs before location adjustment):
 
 Please respond with ONLY a JSON object in this exact format:
 {
-  "reasoning": "Brief explanation of your design choices",
-  "totalEstimatedCost": number,
-  "estimatedReliability": number,
-  "estimatedEmissions": number,
+  "reasoning": "Brief explanation of your design decisions",
+  "cost": total_estimated_cost_number,
+  "reliability": overall_system_reliability_percentage,
+  "emissions": annual_co2_emissions_kg,
   "components": [
     {
       "type": "solar|wind|battery|generator",
-      "count": number,
-      "reasoning": "Why this quantity is recommended"
+      "name": "Component name",
+      "power": power_in_kw,
+      "cost": cost_in_usd,
+      "count": quantity_needed,
+      "emissions": annual_kg_co2,
+      "reliability": reliability_percentage
     }
   ],
   "recommendations": [
@@ -165,63 +156,42 @@ Please respond with ONLY a JSON object in this exact format:
   ]
 }`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
+      const { data, error } = await supabase.functions.invoke('ai-house-scan', {
+        body: { 
+          address: `Microgrid Design: ${request.useCase} in ${location.country}`,
+          prompt: prompt
         },
-        body: JSON.stringify({
-          model: 'gpt-4.1-2025-04-14',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert microgrid engineer. Respond only with valid JSON objects. Consider local costs, climate, and infrastructure when making recommendations.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 1500,
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+      if (error) {
+        throw error;
       }
 
-      const data = await response.json();
-      const aiResponse = data.choices[0].message.content;
-      
-      // Parse the JSON response
-      let suggestion;
-      try {
-        suggestion = JSON.parse(aiResponse);
-      } catch (e) {
-        // Try to extract JSON from the response if it's wrapped in text
-        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          suggestion = JSON.parse(jsonMatch[0]);
-        } else {
-          throw new Error('Invalid JSON response from AI');
+      // Try to parse the response as JSON
+      let aiResponse = data;
+      if (typeof data === 'string') {
+        try {
+          aiResponse = JSON.parse(data);
+        } catch {
+          // If not valid JSON, try to extract JSON from the response
+          const jsonMatch = data.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            aiResponse = JSON.parse(jsonMatch[0]);
+          }
         }
       }
 
-      setLastSuggestion(suggestion);
-      
+      setLastSuggestion(aiResponse);
       toast({
         title: "AI Suggestion Generated",
-        description: "Review the recommended microgrid configuration below.",
+        description: "Review the recommendations below.",
       });
-
     } catch (error) {
       console.error('AI suggestion error:', error);
       toast({
-        title: "AI Suggestion Failed",
-        description: error instanceof Error ? error.message : "Failed to generate suggestion. Please try again.",
-        variant: "destructive"
+        title: "Generation Failed",
+        description: "Unable to generate AI suggestions. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -229,156 +199,104 @@ Please respond with ONLY a JSON object in this exact format:
   };
 
   const applyAISuggestion = () => {
-    if (!lastSuggestion) return;
+    if (!lastSuggestion || !lastSuggestion.components) {
+      toast({
+        title: "No Suggestion to Apply",
+        description: "Please generate an AI suggestion first.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    const componentMap = {
-      solar: { type: 'solar', name: 'Solar Panel (5kW)', power: 5, cost: 3000, emissions: 0, reliability: 85 },
-      wind: { type: 'wind', name: 'Wind Turbine (10kW)', power: 10, cost: 8000, emissions: 0, reliability: 70 },
-      battery: { type: 'battery', name: 'Battery Storage (20kWh)', power: 0, cost: 5000, emissions: 0, reliability: 95 },
-      generator: { type: 'generator', name: 'Backup Generator (15kW)', power: 15, cost: 2000, emissions: 1200, reliability: 99 }
-    };
+    const components: Component[] = lastSuggestion.components.map((comp: any, index: number) => ({
+      id: `ai-${Date.now()}-${index}`,
+      type: comp.type,
+      name: comp.name,
+      power: comp.power || 0,
+      cost: comp.cost || 0,
+      emissions: comp.emissions || 0,
+      reliability: comp.reliability || 85,
+      count: comp.count || 1
+    }));
 
-    const newComponents: Component[] = lastSuggestion.components.map((comp: any, index: number) => {
-      const baseComponent = componentMap[comp.type as keyof typeof componentMap];
-      return {
-        id: Math.random().toString(36).substr(2, 9),
-        type: comp.type,
-        name: baseComponent.name,
-        power: baseComponent.power,
-        cost: Math.round(baseComponent.cost * (location?.costMultiplier || 1)),
-        emissions: baseComponent.emissions,
-        reliability: baseComponent.reliability,
-        count: comp.count
-      };
-    });
-
-    onComponentsGenerated(newComponents);
+    onComponentsGenerated(components);
     
     toast({
-      title: "AI Suggestion Applied",
-      description: "The recommended components have been added to your design.",
+      title: "Configuration Applied",
+      description: `Added ${components.length} component types to your design.`,
     });
   };
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="w-5 h-5 text-primary" />
-          AI Design Assistant
+          AI Assistant
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Get intelligent microgrid recommendations based on your specific requirements
-        </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* API Key Input */}
-        {showApiKeyInput && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-3">
-                <p>To use AI suggestions, please enter your OpenAI API key:</p>
-                <div className="space-y-2">
-                  <Input
-                    type="password"
-                    placeholder="sk-..."
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => setShowApiKeyInput(false)}>
-                      Save Key
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setShowApiKeyInput(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Your API key is only stored locally and never transmitted to our servers.
-                </p>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {!showApiKeyInput && !apiKey && (
-          <Alert>
-            <Settings className="h-4 w-4" />
-            <AlertDescription>
-              <div className="flex justify-between items-center">
-                <span>OpenAI API key required for AI suggestions</span>
-                <Button size="sm" variant="outline" onClick={() => setShowApiKeyInput(true)}>
-                  Add API Key
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Use Case Templates */}
         <div className="space-y-3">
-          <Label>Quick Templates</Label>
+          <Label className="text-sm font-medium">Quick Templates</Label>
           <div className="grid grid-cols-2 gap-2">
-            {useCaseTemplates.map((template, index) => (
+            {useCaseTemplates.map((template) => (
               <Button
-                key={index}
+                key={template.name}
                 variant="outline"
                 size="sm"
-                className="text-left justify-start h-auto p-3"
                 onClick={() => applyTemplate(template)}
+                className="h-auto p-2 text-xs"
               >
-                <div>
-                  <div className="font-medium text-xs">{template.name}</div>
-                  <div className="text-xs text-muted-foreground">{template.power}</div>
+                <div className="text-center">
+                  <div className="font-medium">{template.name}</div>
+                  <div className="text-muted-foreground">${template.budget.toLocaleString()}</div>
                 </div>
               </Button>
             ))}
           </div>
         </div>
 
-        {/* Request Form */}
+        {/* AI Request Form */}
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="useCase">Use Case *</Label>
-              <Input
-                id="useCase"
-                placeholder="e.g., Rural School, Village Community"
-                value={request.useCase}
-                onChange={(e) => setRequest(prev => ({ ...prev, useCase: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="budget">Budget (USD) *</Label>
-              <Input
-                id="budget"
-                type="number"
-                placeholder="50000"
-                value={request.budget}
-                onChange={(e) => setRequest(prev => ({ ...prev, budget: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="useCase">Use Case *</Label>
+            <Input
+              id="useCase"
+              value={request.useCase}
+              onChange={(e) => setRequest({...request, useCase: e.target.value})}
+              placeholder="e.g., Rural school, Village clinic"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="budget">Budget (USD)</Label>
+            <Input
+              id="budget"
+              type="number"
+              value={request.budget}
+              onChange={(e) => setRequest({...request, budget: parseInt(e.target.value) || 0})}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="powerRequirement">Power Requirement *</Label>
             <Input
               id="powerRequirement"
-              placeholder="e.g., 50-100 kW, 25 kW minimum"
               value={request.powerRequirement}
-              onChange={(e) => setRequest(prev => ({ ...prev, powerRequirement: e.target.value }))}
+              onChange={(e) => setRequest({...request, powerRequirement: e.target.value})}
+              placeholder="e.g., 50-100 kW, 24/7 power"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="constraints">Constraints</Label>
-            <Input
+            <Textarea
               id="constraints"
-              placeholder="e.g., limited space, high wind area, dusty environment"
               value={request.constraints}
-              onChange={(e) => setRequest(prev => ({ ...prev, constraints: e.target.value }))}
+              onChange={(e) => setRequest({...request, constraints: e.target.value})}
+              placeholder="e.g., Limited space, extreme weather, maintenance restrictions"
+              rows={2}
             />
           </div>
 
@@ -386,29 +304,28 @@ Please respond with ONLY a JSON object in this exact format:
             <Label htmlFor="additionalInfo">Additional Information</Label>
             <Textarea
               id="additionalInfo"
-              placeholder="Any additional details about your project..."
-              className="min-h-[80px]"
               value={request.additionalInfo}
-              onChange={(e) => setRequest(prev => ({ ...prev, additionalInfo: e.target.value }))}
+              onChange={(e) => setRequest({...request, additionalInfo: e.target.value})}
+              placeholder="Any other relevant details about your project"
+              rows={2}
             />
           </div>
         </div>
 
         {/* Generate Button */}
         <Button 
-          onClick={generateAISuggestion}
-          disabled={isLoading || !apiKey || !location}
+          onClick={generateAISuggestion} 
+          disabled={isLoading || !location}
           className="w-full"
-          variant="cta"
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating AI Suggestion...
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Generating...
             </>
           ) : (
             <>
-              <Lightbulb className="mr-2 h-4 w-4" />
+              <Send className="w-4 h-4 mr-2" />
               Generate AI Suggestion
             </>
           )}
@@ -416,86 +333,66 @@ Please respond with ONLY a JSON object in this exact format:
 
         {/* AI Suggestion Display */}
         {lastSuggestion && (
-          <Card className="border-primary/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Bot className="w-5 h-5 text-primary" />
-                AI Recommendation
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                {lastSuggestion.reasoning}
+          <div className="space-y-4 p-4 bg-muted rounded-lg">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-yellow-500" />
+              <span className="font-medium">AI Recommendation</span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">{lastSuggestion.reasoning}</p>
+            
+            {/* Key Metrics */}
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="text-center">
+                <div className="font-medium text-green-600">${lastSuggestion.cost?.toLocaleString()}</div>
+                <div className="text-muted-foreground">Total Cost</div>
               </div>
-
-              {/* Key Metrics */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="text-lg font-bold text-green-600">
-                    ${lastSuggestion.totalEstimatedCost?.toLocaleString() || 'N/A'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Estimated Cost</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="text-lg font-bold text-blue-600">
-                    {lastSuggestion.estimatedReliability || 'N/A'}%
-                  </div>
-                  <div className="text-xs text-muted-foreground">Reliability</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="text-lg font-bold text-orange-600">
-                    {lastSuggestion.estimatedEmissions || 0}
-                  </div>
-                  <div className="text-xs text-muted-foreground">CO₂/year (kg)</div>
-                </div>
+              <div className="text-center">
+                <div className="font-medium text-blue-600">{lastSuggestion.reliability}%</div>
+                <div className="text-muted-foreground">Reliability</div>
               </div>
+              <div className="text-center">
+                <div className="font-medium text-orange-600">{lastSuggestion.emissions}</div>
+                <div className="text-muted-foreground">kg CO₂/year</div>
+              </div>
+            </div>
 
-              {/* Components */}
+            {/* Components */}
+            {lastSuggestion.components && (
               <div className="space-y-2">
-                <Label>Recommended Components:</Label>
-                {lastSuggestion.components?.map((comp: any, index: number) => {
-                  const icons = {
-                    solar: <Sun className="w-4 h-4 text-yellow-600" />,
-                    wind: <Wind className="w-4 h-4 text-blue-600" />,
-                    battery: <Battery className="w-4 h-4 text-green-600" />,
-                    generator: <Zap className="w-4 h-4 text-orange-600" />
-                  };
-
-                  return (
-                    <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <div className="flex items-center gap-2">
-                        {icons[comp.type as keyof typeof icons]}
-                        <span className="font-medium capitalize">{comp.type}</span>
-                        <Badge variant="outline">×{comp.count}</Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {comp.reasoning}
-                      </div>
-                    </div>
-                  );
-                })}
+                <div className="font-medium text-sm">Recommended Components:</div>
+                {lastSuggestion.components.map((comp: any, index: number) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    {comp.type === 'solar' && <Sun className="w-4 h-4 text-yellow-500" />}
+                    {comp.type === 'wind' && <Wind className="w-4 h-4 text-blue-500" />}
+                    {comp.type === 'battery' && <Battery className="w-4 h-4 text-green-500" />}
+                    {comp.type === 'generator' && <Zap className="w-4 h-4 text-red-500" />}
+                    <span>{comp.count}x {comp.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      ${comp.cost?.toLocaleString()}
+                    </Badge>
+                  </div>
+                ))}
               </div>
+            )}
 
-              {/* Recommendations */}
-              {lastSuggestion.recommendations && (
-                <div className="space-y-2">
-                  <Label>Key Recommendations:</Label>
+            {/* Recommendations */}
+            {lastSuggestion.recommendations && (
+              <div className="space-y-2">
+                <div className="font-medium text-sm">Key Recommendations:</div>
+                <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                   {lastSuggestion.recommendations.map((rec: string, index: number) => (
-                    <div key={index} className="flex items-start gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>{rec}</span>
-                    </div>
+                    <li key={index}>{rec}</li>
                   ))}
-                </div>
-              )}
+                </ul>
+              </div>
+            )}
 
-              {/* Apply Button */}
-              <Button onClick={applyAISuggestion} className="w-full" variant="cta">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Apply This Configuration
-              </Button>
-            </CardContent>
-          </Card>
+            <Button onClick={applyAISuggestion} className="w-full" variant="outline">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Apply This Configuration
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

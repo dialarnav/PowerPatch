@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { AuthModal } from "@/components/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   BookOpen, 
   Users, 
@@ -18,7 +20,8 @@ import {
   Award,
   Star,
   Trophy,
-  Zap
+  Zap,
+  User
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -179,6 +182,8 @@ const Challenges = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const { user } = useAuth();
 
   const difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced'];
   const categories = ['All', 'Education', 'Humanitarian', 'Sustainability', 'Tourism', 'Agriculture', 'Research'];
@@ -401,12 +406,24 @@ const Challenges = () => {
                 </div>
 
                 {/* CTA */}
-                <Link to={`/challenge/${challenge.id}`}>
-                  <Button variant="energy" className="w-full group-hover:shadow-glow transition-all duration-300">
-                    Accept Challenge
+                {user ? (
+                  <Link to={`/challenge/${challenge.id}`}>
+                    <Button variant="energy" className="w-full group-hover:shadow-glow transition-all duration-300">
+                      Accept Challenge
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button 
+                    variant="energy" 
+                    className="w-full group-hover:shadow-glow transition-all duration-300"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Sign In to Accept Challenge
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
-                </Link>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -448,6 +465,13 @@ const Challenges = () => {
           </Card>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthSuccess={() => setShowAuthModal(false)}
+      />
     </div>
   );
 };
