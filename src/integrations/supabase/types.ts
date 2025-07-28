@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      address_scan_designs: {
+        Row: {
+          address: string
+          ai_recommendations: Json | null
+          components: Json | null
+          created_at: string
+          id: string
+          scan_data: Json | null
+          total_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          ai_recommendations?: Json | null
+          components?: Json | null
+          created_at?: string
+          id?: string
+          scan_data?: Json | null
+          total_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          ai_recommendations?: Json | null
+          components?: Json | null
+          created_at?: string
+          id?: string
+          scan_data?: Json | null
+          total_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       microgrid_designs: {
         Row: {
           address: string | null

@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Zap, Sun, Wind, Battery, Globe, Users, Target, BookOpen, Award, ArrowRight, Play, TrendingUp } from "lucide-react";
+import { Zap, Sun, Wind, Battery, Globe, Users, Target, BookOpen, Award, ArrowRight, Play, TrendingUp, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
 import EarlyAccessModal from "@/components/EarlyAccessModal";
 import PartnerModal from "@/components/PartnerModal";
 import heroImage from "@/assets/hero-energy.jpg";
@@ -15,7 +17,9 @@ import batteryIcon from "@/assets/battery-icon.png";
 
 const Index = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,12 +68,24 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/simulator">
-              <Button variant="hero" size="lg" className="text-lg px-8 py-4">
-                <Play className="mr-2 h-5 w-5" />
-                Launch Simulator
+            {user ? (
+              <Link to="/simulator">
+                <Button variant="hero" size="lg" className="text-lg px-8 py-4">
+                  <Play className="mr-2 h-5 w-5" />
+                  Launch Simulator
+                </Button>
+              </Link>
+            ) : (
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="text-lg px-8 py-4"
+                onClick={() => setShowAuthModal(true)}
+              >
+                <User className="mr-2 h-5 w-5" />
+                Sign In to Start
               </Button>
-            </Link>
+            )}
             <Button 
               variant="outline" 
               size="lg" 
@@ -441,6 +457,13 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Modals */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthSuccess={() => setShowAuthModal(false)}
+      />
     </div>
   );
 };

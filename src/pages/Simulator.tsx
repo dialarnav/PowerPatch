@@ -7,6 +7,9 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LocationSelector from "@/components/LocationSelector";
 import AIAssistant from "@/components/AIAssistant";
+import { AuthModal } from "@/components/AuthModal";
+import { AddressScanModal } from "@/components/AddressScanModal";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Sun, 
   Wind, 
@@ -21,10 +24,14 @@ import {
   RefreshCw,
   TrendingUp,
   AlertCircle,
-  MapPin
+  MapPin,
+  Scan,
+  User,
+  LogOut
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Location {
   country: string;
@@ -94,7 +101,10 @@ const Simulator = () => {
   const [selectedComponents, setSelectedComponents] = useState<Component[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAddressScanModal, setShowAddressScanModal] = useState(false);
   const { toast } = useToast();
+  const { user, requireAuth } = useAuth();
 
   const getLocationAdjustedCost = useCallback((baseCost: number) => {
     if (!selectedLocation) return baseCost;
@@ -158,6 +168,26 @@ const Simulator = () => {
   const handleAIComponentsGenerated = useCallback((components: Component[]) => {
     setSelectedComponents(components);
   }, []);
+
+  const handleScanComplete = useCallback((components: Component[]) => {
+    setSelectedComponents(components);
+    toast({
+      title: "Address scan complete!",
+      description: "AI has generated a custom microgrid design for your property.",
+    });
+  }, [toast]);
+
+  const handleAuthRequired = useCallback(() => {
+    setShowAuthModal(true);
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed out",
+      description: "You've been successfully signed out.",
+    });
+  }, [toast]);
 
   const calculateStats = useCallback((): GridStats => {
     const stats = selectedComponents.reduce(
@@ -263,14 +293,35 @@ const Simulator = () => {
               <h1 className="text-2xl font-bold text-primary">PowerPatch Simulator</h1>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={shareGrid}>
+              <Button 
+                variant="outline" 
+                onClick={() => user ? setShowAddressScanModal(true) : handleAuthRequired()}
+                className="bg-gradient-to-r from-primary to-primary-variant text-primary-foreground border-0 hover:opacity-90"
+              >
+                <Scan className="w-4 h-4 mr-2" />
+                AI House Scan
+              </Button>
+              
+              <Button variant="outline" onClick={() => user ? shareGrid() : handleAuthRequired()}>
                 <Share2 className="w-4 h-4 mr-2" />
                 Share
               </Button>
-              <Button variant="outline" onClick={exportGrid}>
+              <Button variant="outline" onClick={() => user ? exportGrid() : handleAuthRequired()}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
+              
+              {user ? (
+                <Button variant="outline" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={handleAuthRequired}>
+                  <User className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -719,6 +770,19 @@ const Simulator = () => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthSuccess={() => setShowAuthModal(false)}
+      />
+      
+      <AddressScanModal
+        isOpen={showAddressScanModal}
+        onClose={() => setShowAddressScanModal(false)}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   );
 };
