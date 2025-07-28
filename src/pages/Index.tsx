@@ -7,8 +7,9 @@ import { Link } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";
 import { AddressScanModal } from "@/components/AddressScanModal";
 import { useAuth } from "@/hooks/useAuth";
-import { PartnerModal } from "@/components/PartnerModal";
-import { EarlyAccessModal } from "@/components/EarlyAccessModal";
+import { PartnerModalWrapper } from "@/components/PartnerModalWrapper";
+import { EarlyAccessModalWrapper } from "@/components/EarlyAccessModalWrapper";
+import { supabase } from "@/integrations/supabase/client";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -24,7 +25,7 @@ const Index = () => {
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const handleGetStarted = () => {
     if (user) {
@@ -35,7 +36,7 @@ const Index = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    await supabase.auth.signOut();
   };
 
   return (
@@ -446,26 +447,28 @@ const Index = () => {
       {showAuthModal && (
         <AuthModal 
           isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)} 
+          onClose={() => setShowAuthModal(false)}
+          onAuthSuccess={() => setShowAddressScan(true)}
         />
       )}
       
       {showAddressScan && (
         <AddressScanModal 
           isOpen={showAddressScan} 
-          onClose={() => setShowAddressScan(false)} 
+          onClose={() => setShowAddressScan(false)}
+          onScanComplete={() => {}}
         />
       )}
       
       {showPartnerModal && (
-        <PartnerModal 
+        <PartnerModalWrapper 
           isOpen={showPartnerModal} 
           onClose={() => setShowPartnerModal(false)} 
         />
       )}
       
       {showEarlyAccessModal && (
-        <EarlyAccessModal 
+        <EarlyAccessModalWrapper 
           isOpen={showEarlyAccessModal} 
           onClose={() => setShowEarlyAccessModal(false)} 
         />
