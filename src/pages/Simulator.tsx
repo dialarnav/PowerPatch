@@ -296,7 +296,7 @@ const Simulator = () => {
               <Button 
                 variant="outline" 
                 onClick={() => user ? setShowAddressScanModal(true) : handleAuthRequired()}
-                className="bg-gradient-to-r from-primary to-primary-variant text-primary-foreground border-0 hover:opacity-90"
+                className="bg-green-600 hover:bg-green-700 text-white border-0 shadow-md font-medium"
               >
                 <Scan className="w-4 h-4 mr-2" />
                 AI House Scan
