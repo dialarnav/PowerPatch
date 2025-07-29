@@ -502,8 +502,8 @@ const Simulator = () => {
 
           {/* Component Library */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
+            <Card className="h-fit max-h-[80vh] flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="w-5 h-5 text-primary" />
                   Component Library
@@ -512,7 +512,7 @@ const Simulator = () => {
                   Drag components to build your microgrid
                 </CardDescription>
               </CardHeader>
-               <CardContent className="space-y-4">
+               <CardContent className="flex-1 overflow-y-auto space-y-4 max-h-[calc(80vh-8rem)]">
                  {!selectedLocation ? (
                    <div className="text-center py-8 space-y-4">
                      <MapPin className="w-12 h-12 mx-auto text-muted-foreground opacity-50" />
