@@ -158,12 +158,12 @@ const Index = () => {
               Design, simulate, and optimize your microgrid system with AI-powered insights
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button variant="outline" size="lg" asChild className="text-lg px-8 py-3">
+                <Link to="/simulator">Try Simulator</Link>
+              </Button>
               <Button variant="hero" size="lg" onClick={handleGetStarted} className="text-lg px-8 py-3">
                 <Brain className="mr-2 h-5 w-5" />
                 Get AI House Scan
-              </Button>
-              <Button variant="outline" size="lg" asChild className="text-lg px-8 py-3">
-                <Link to="/simulator">Try Simulator</Link>
               </Button>
             </div>
           </div>
