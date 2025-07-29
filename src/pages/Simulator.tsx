@@ -486,17 +486,11 @@ const Simulator = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
-          {/* Left Sidebar - Location & AI */}
+          {/* Left Sidebar - Location Only */}
           <div className="lg:col-span-1 space-y-6">
             <LocationSelector
               selectedLocation={selectedLocation}
               onLocationChange={handleLocationChange}
-            />
-            
-            <AIAssistant
-              location={selectedLocation}
-              onComponentsGenerated={handleAIComponentsGenerated}
-              currentComponents={selectedComponents}
             />
           </div>
 
@@ -740,6 +734,13 @@ const Simulator = () => {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* AI Assistant */}
+                <AIAssistant
+                  location={selectedLocation}
+                  onComponentsGenerated={handleAIComponentsGenerated}
+                  currentComponents={selectedComponents}
+                />
               </TabsContent>
 
               <TabsContent value="analysis" className="space-y-6">
