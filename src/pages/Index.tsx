@@ -10,23 +10,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { PartnerModalWrapper } from "@/components/PartnerModalWrapper";
 import { EarlyAccessModalWrapper } from "@/components/EarlyAccessModalWrapper";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
 const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAddressScan, setShowAddressScan] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
-
+  const {
+    user
+  } = useAuth();
   const handleGetStarted = () => {
     if (user) {
       setShowAddressScan(true);
@@ -34,20 +27,18 @@ const Index = () => {
       setShowAuthModal(true);
     }
   };
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       {/* Navigation */}
       <nav className="bg-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Zap className="h-8 w-8 text-green-600 mr-2" />
-              <span className="text-xl font-bold text-gray-900">EnergyFlow</span>
+              <span className="text-xl font-bold text-gray-900">PowerPatch
+            </span>
             </div>
             
             {/* Desktop Navigation */}
@@ -60,10 +51,7 @@ const Index = () => {
                       <div className="grid gap-3 p-6 md:w-[400px] lg:w-[500px]">
                         <div className="grid grid-cols-2 gap-4">
                           <NavigationMenuLink asChild>
-                            <Link
-                              to="/simulator"
-                              className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                            >
+                            <Link to="/simulator" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
                               <div className="text-sm font-medium leading-none">Energy Simulator</div>
                               <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                 Design your microgrid system
@@ -71,10 +59,7 @@ const Index = () => {
                             </Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link
-                              to="/challenges"
-                              className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                            >
+                            <Link to="/challenges" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
                               <div className="text-sm font-medium leading-none">Challenges</div>
                               <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                 Interactive scenarios
@@ -88,45 +73,26 @@ const Index = () => {
                 </NavigationMenuList>
               </NavigationMenu>
               
-              <Button
-                onClick={handleGetStarted}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 shadow-md"
-              >
+              <Button onClick={handleGetStarted} className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 shadow-md">
                 <Brain className="h-4 w-4" />
                 AI House Scan
               </Button>
               
-              {user ? (
-                <div className="flex items-center space-x-4">
+              {user ? <div className="flex items-center space-x-4">
                   <span className="text-sm text-gray-700">
                     Welcome, {user.email}
                   </span>
-                  <Button
-                    variant="outline"
-                    onClick={handleSignOut}
-                    className="text-sm"
-                  >
+                  <Button variant="outline" onClick={handleSignOut} className="text-sm">
                     Sign Out
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAuthModal(true)}
-                  className="text-green-600 border-green-600 hover:bg-green-50"
-                >
+                </div> : <Button variant="outline" onClick={() => setShowAuthModal(true)} className="text-green-600 border-green-600 hover:bg-green-50">
                   Sign In
-                </Button>
-              )}
+                </Button>}
             </div>
 
             {/* Mobile menu button */}
             <div className="md:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 <Menu className="h-6 w-6" />
               </Button>
             </div>
@@ -134,81 +100,48 @@ const Index = () => {
         </div>
 
         {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t">
+        {mobileMenuOpen && <div className="md:hidden bg-white border-t">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link
-                to="/simulator"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
-                onClick={() => setMobileMenuOpen(false)}
-              >
+              <Link to="/simulator" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50" onClick={() => setMobileMenuOpen(false)}>
                 Energy Simulator
               </Link>
-              <Link
-                to="/challenges"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
-                onClick={() => setMobileMenuOpen(false)}
-              >
+              <Link to="/challenges" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50" onClick={() => setMobileMenuOpen(false)}>
                 Challenges
               </Link>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowPartnerModal(true);
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full justify-start text-gray-700 hover:text-green-600"
-              >
+              <Button variant="ghost" onClick={() => {
+            setShowPartnerModal(true);
+            setMobileMenuOpen(false);
+          }} className="w-full justify-start text-gray-700 hover:text-green-600">
                 Partners
               </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowEarlyAccessModal(true);
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full justify-start text-gray-700 hover:text-green-600"
-              >
+              <Button variant="ghost" onClick={() => {
+            setShowEarlyAccessModal(true);
+            setMobileMenuOpen(false);
+          }} className="w-full justify-start text-gray-700 hover:text-green-600">
                 Early Access
               </Button>
-              <Button
-                onClick={() => {
-                  handleGetStarted();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 shadow-md"
-              >
+              <Button onClick={() => {
+            handleGetStarted();
+            setMobileMenuOpen(false);
+          }} className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 shadow-md">
                 <Brain className="h-4 w-4" />
                 AI House Scan
               </Button>
-              {user ? (
-                <div className="px-3 py-2 border-t">
+              {user ? <div className="px-3 py-2 border-t">
                   <p className="text-sm text-gray-700 mb-2">
                     Welcome, {user.email}
                   </p>
-                  <Button
-                    variant="outline"
-                    onClick={handleSignOut}
-                    className="w-full"
-                  >
+                  <Button variant="outline" onClick={handleSignOut} className="w-full">
                     Sign Out
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowAuthModal(true);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-green-600 border-green-600 hover:bg-green-50"
-                >
+                </div> : <Button variant="outline" onClick={() => {
+            setShowAuthModal(true);
+            setMobileMenuOpen(false);
+          }} className="w-full text-green-600 border-green-600 hover:bg-green-50">
                   Sign In
-                </Button>
-              )}
+                </Button>}
             </div>
-          </div>
-        )}
+          </div>}
       </nav>
 
       {/* Hero Section */}
@@ -225,21 +158,11 @@ const Index = () => {
               Design, simulate, and optimize your microgrid system with AI-powered insights
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                variant="hero"
-                size="lg"
-                onClick={handleGetStarted}
-                className="text-lg px-8 py-3"
-              >
+              <Button variant="hero" size="lg" onClick={handleGetStarted} className="text-lg px-8 py-3">
                 <Brain className="mr-2 h-5 w-5" />
                 Get AI House Scan
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                asChild
-                className="text-lg px-8 py-3"
-              >
+              <Button variant="outline" size="lg" asChild className="text-lg px-8 py-3">
                 <Link to="/simulator">Try Simulator</Link>
               </Button>
             </div>
@@ -497,11 +420,7 @@ const Index = () => {
             
             <div className="text-center mt-8">
               <Link to="/challenges">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="text-lg px-8 py-3 border-green-600 text-green-600 hover:bg-green-50"
-                >
+                <Button variant="outline" size="lg" className="text-lg px-8 py-3 border-green-600 text-green-600 hover:bg-green-50">
                   View All Challenges
                   <Trophy className="ml-2 h-5 w-5" />
                 </Button>
@@ -521,21 +440,11 @@ const Index = () => {
             Join thousands of homeowners who have already optimized their energy systems
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              variant="cta"
-              size="lg"
-              onClick={handleGetStarted}
-              className="text-lg px-8 py-3"
-            >
+            <Button variant="cta" size="lg" onClick={handleGetStarted} className="text-lg px-8 py-3">
               <Brain className="mr-2 h-5 w-5" />
               Start Your AI Analysis
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              asChild
-              className="text-lg px-8 py-3"
-            >
+            <Button variant="outline" size="lg" asChild className="text-lg px-8 py-3">
               <Link to="/challenges">
                 <Trophy className="mr-2 h-5 w-5" />
                 Try Challenges
@@ -594,37 +503,13 @@ const Index = () => {
       </footer>
 
       {/* Modals */}
-      {showAuthModal && (
-        <AuthModal 
-          isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)}
-          onAuthSuccess={() => setShowAddressScan(true)}
-        />
-      )}
+      {showAuthModal && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuthSuccess={() => setShowAddressScan(true)} />}
       
-      {showAddressScan && (
-        <AddressScanModal 
-          isOpen={showAddressScan} 
-          onClose={() => setShowAddressScan(false)}
-          onScanComplete={() => {}}
-        />
-      )}
+      {showAddressScan && <AddressScanModal isOpen={showAddressScan} onClose={() => setShowAddressScan(false)} onScanComplete={() => {}} />}
       
-      {showPartnerModal && (
-        <PartnerModalWrapper 
-          isOpen={showPartnerModal} 
-          onClose={() => setShowPartnerModal(false)} 
-        />
-      )}
+      {showPartnerModal && <PartnerModalWrapper isOpen={showPartnerModal} onClose={() => setShowPartnerModal(false)} />}
       
-      {showEarlyAccessModal && (
-        <EarlyAccessModalWrapper 
-          isOpen={showEarlyAccessModal} 
-          onClose={() => setShowEarlyAccessModal(false)} 
-        />
-      )}
-    </div>
-  );
+      {showEarlyAccessModal && <EarlyAccessModalWrapper isOpen={showEarlyAccessModal} onClose={() => setShowEarlyAccessModal(false)} />}
+    </div>;
 };
-
 export default Index;
