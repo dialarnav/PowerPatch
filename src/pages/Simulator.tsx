@@ -512,67 +512,81 @@ const Simulator = () => {
                   Drag components to build your microgrid
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {availableComponents.map((component, index) => {
-                  const adjustedCost = getLocationAdjustedCost(component.cost);
-                  const costDifference = adjustedCost - component.cost;
-                  
-                  return (
-                    <Card 
-                      key={index}
-                      className="cursor-pointer hover:shadow-card transition-all duration-200 border-2 border-dashed border-muted hover:border-primary"
-                      onClick={() => addComponent(component)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          {getIconForType(component.type)}
-                          <div className="flex-1">
-                            <h3 className="font-medium text-sm">{component.name}</h3>
-                            <p className="text-xs text-muted-foreground">
-                              {component.power > 0 ? `${component.power}kW` : 'Storage'}
-                            </p>
-                          </div>
-                        </div>
-                         <div className="grid grid-cols-1 gap-2 text-xs">
-                           <div className="flex justify-between">
-                             <span className="text-muted-foreground">Base Cost:</span>
-                             <span className="font-medium">${component.cost.toLocaleString()}</span>
-                           </div>
-                           {selectedLocation && costDifference !== 0 && (
-                             <div className="flex justify-between">
-                               <span className="text-muted-foreground">Local Cost:</span>
-                               <span className={`font-medium ${costDifference > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                 ${adjustedCost.toLocaleString()}
-                                 <span className="text-xs ml-1">
-                                   ({costDifference > 0 ? '+' : ''}${costDifference.toLocaleString()})
-                                 </span>
-                               </span>
+               <CardContent className="space-y-4">
+                 {!selectedLocation ? (
+                   <div className="text-center py-8 space-y-4">
+                     <MapPin className="w-12 h-12 mx-auto text-muted-foreground opacity-50" />
+                     <div className="space-y-2">
+                       <h3 className="font-medium text-muted-foreground">Select Project Location First</h3>
+                       <p className="text-sm text-muted-foreground">
+                         Choose your location to unlock components with accurate pricing and performance estimates.
+                       </p>
+                     </div>
+                   </div>
+                 ) : (
+                   <>
+                     {availableComponents.map((component, index) => {
+                       const adjustedCost = getLocationAdjustedCost(component.cost);
+                       const costDifference = adjustedCost - component.cost;
+                       
+                       return (
+                         <Card 
+                           key={index}
+                           className="cursor-pointer hover:shadow-card transition-all duration-200 border-2 border-dashed border-muted hover:border-primary"
+                           onClick={() => addComponent(component)}
+                         >
+                           <CardContent className="p-4">
+                             <div className="flex items-center gap-3 mb-3">
+                               {getIconForType(component.type)}
+                               <div className="flex-1">
+                                 <h3 className="font-medium text-sm">{component.name}</h3>
+                                 <p className="text-xs text-muted-foreground">
+                                   {component.power > 0 ? `${component.power}kW` : component.power < 0 ? `${Math.abs(component.power)}kW Load` : 'Storage'}
+                                 </p>
+                               </div>
                              </div>
-                           )}
-                           <div className="flex justify-between">
-                             <span className="text-muted-foreground">Reliability:</span>
-                             <span className="font-medium">{component.reliability}%</span>
-                           </div>
-                           {component.efficiency && (
-                             <div className="flex justify-between">
-                               <span className="text-muted-foreground">Efficiency:</span>
-                               <span className="font-medium">{component.efficiency}%</span>
+                             <div className="grid grid-cols-1 gap-2 text-xs">
+                               <div className="flex justify-between">
+                                 <span className="text-muted-foreground">Base Cost:</span>
+                                 <span className="font-medium">${component.cost.toLocaleString()}</span>
+                               </div>
+                               {selectedLocation && costDifference !== 0 && (
+                                 <div className="flex justify-between">
+                                   <span className="text-muted-foreground">Local Cost:</span>
+                                   <span className={`font-medium ${costDifference > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                     ${adjustedCost.toLocaleString()}
+                                     <span className="text-xs ml-1">
+                                       ({costDifference > 0 ? '+' : ''}${costDifference.toLocaleString()})
+                                     </span>
+                                   </span>
+                                 </div>
+                               )}
+                               <div className="flex justify-between">
+                                 <span className="text-muted-foreground">Reliability:</span>
+                                 <span className="font-medium">{component.reliability}%</span>
+                               </div>
+                               {component.efficiency && (
+                                 <div className="flex justify-between">
+                                   <span className="text-muted-foreground">Efficiency:</span>
+                                   <span className="font-medium">{component.efficiency}%</span>
+                                 </div>
+                               )}
+                               {component.customizable && (
+                                 <div className="flex items-center justify-center mt-2">
+                                   <Badge variant="secondary" className="text-xs">
+                                     <Edit3 className="w-3 h-3 mr-1" />
+                                     Customizable
+                                   </Badge>
+                                 </div>
+                               )}
                              </div>
-                           )}
-                           {component.customizable && (
-                             <div className="flex items-center justify-center mt-2">
-                               <Badge variant="secondary" className="text-xs">
-                                 <Edit3 className="w-3 h-3 mr-1" />
-                                 Customizable
-                               </Badge>
-                             </div>
-                           )}
-                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </CardContent>
+                           </CardContent>
+                         </Card>
+                       );
+                     })}
+                   </>
+                 )}
+               </CardContent>
             </Card>
           </div>
 
@@ -960,6 +974,7 @@ const Simulator = () => {
         isOpen={!!customizeComponent}
         onClose={() => setCustomizeComponent(null)}
         onConfirm={confirmCustomizedComponent}
+        location={selectedLocation}
       />
     </div>
   );

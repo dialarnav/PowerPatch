@@ -12,7 +12,8 @@ import {
   DollarSign, 
   TrendingUp,
   Save,
-  X
+  X,
+  MapPin
 } from "lucide-react";
 
 interface Component {
@@ -39,13 +40,23 @@ interface ComponentCustomizeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (component: Component) => void;
+  location?: {
+    country: string;
+    state?: string;
+    region: string;
+    costMultiplier: number;
+    currency: string;
+    laborCost: number;
+    shippingCost: number;
+  } | null;
 }
 
 export const ComponentCustomizeModal = ({ 
   component, 
   isOpen, 
   onClose, 
-  onConfirm 
+  onConfirm,
+  location 
 }: ComponentCustomizeModalProps) => {
   const [customizedComponent, setCustomizedComponent] = useState<Component | null>(component);
 
@@ -61,6 +72,46 @@ export const ComponentCustomizeModal = ({
 
   const handleCostChange = (value: number[]) => {
     setCustomizedComponent(prev => prev ? { ...prev, cost: value[0] } : null);
+  };
+
+  const handleEstimateForLocation = () => {
+    if (!location || !customizedComponent) return;
+
+    // Location-based efficiency and power estimates
+    const locationFactors = {
+      solar: {
+        efficiency: location.region.includes('Desert') || location.country === 'Australia' ? 25 : 
+                   location.country === 'Germany' || location.country === 'UK' ? 18 : 22,
+        powerMultiplier: location.region.includes('Sunny') ? 1.2 : 
+                        location.country === 'Norway' ? 0.8 : 1.0
+      },
+      wind: {
+        efficiency: location.region.includes('Coastal') || location.country === 'Denmark' ? 42 : 
+                   location.region.includes('Mountain') ? 38 : 35,
+        powerMultiplier: location.region.includes('Windy') ? 1.3 : 1.0
+      },
+      hydro: {
+        efficiency: location.region.includes('River') || location.country === 'Norway' ? 85 : 75,
+        powerMultiplier: location.region.includes('Mountain') ? 1.2 : 0.8
+      },
+      geothermal: {
+        efficiency: location.country === 'Iceland' || location.region.includes('Volcanic') ? 450 : 350,
+        powerMultiplier: location.region.includes('Geothermal') ? 1.5 : 0.7
+      }
+    };
+
+    const factor = locationFactors[customizedComponent.type as keyof typeof locationFactors];
+    
+    if (factor) {
+      const estimatedEfficiency = factor.efficiency;
+      const estimatedPower = Math.round(customizedComponent.power * factor.powerMultiplier);
+      
+      setCustomizedComponent(prev => prev ? {
+        ...prev,
+        efficiency: estimatedEfficiency,
+        power: Math.max(estimatedPower, customizedComponent.customOptions?.powerRange?.[0] || 1)
+      } : null);
+    }
   };
 
   const handleEfficiencyChange = (value: number[]) => {
@@ -103,6 +154,28 @@ export const ComponentCustomizeModal = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Location Estimation */}
+          {location && (
+            <Card className="bg-muted/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">Location: {location.country}{location.state ? `, ${location.state}` : ''}</h4>
+                    <p className="text-xs text-muted-foreground">Get optimized estimates for your location</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleEstimateForLocation}
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Estimate For Location
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Component Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Component Name</Label>
@@ -137,33 +210,6 @@ export const ComponentCustomizeModal = ({
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>{component.customOptions.powerRange[0]} kW</span>
                 <span>{component.customOptions.powerRange[1]} kW</span>
-              </div>
-            </div>
-          )}
-
-          {/* Cost */}
-          {component.customOptions?.costRange && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  Cost
-                </Label>
-                <Badge variant="outline">
-                  ${customizedComponent.cost.toLocaleString()}
-                </Badge>
-              </div>
-              <Slider
-                value={[customizedComponent.cost]}
-                onValueChange={handleCostChange}
-                min={component.customOptions.costRange[0]}
-                max={component.customOptions.costRange[1]}
-                step={100}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>${component.customOptions.costRange[0].toLocaleString()}</span>
-                <span>${component.customOptions.costRange[1].toLocaleString()}</span>
               </div>
             </div>
           )}
