@@ -8,13 +8,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Component {
-  type: string;
+  id: string;
+  type: 'solar' | 'wind' | 'battery' | 'generator' | 'hydro' | 'grid' | 'load' | 'inverter' | 'geothermal' | 'biomass';
   name: string;
   power: number;
   cost: number;
   count: number;
   emissions: number;
   reliability: number;
+  efficiency?: number;
+  capacity?: number;
+  customizable: boolean;
+  customOptions?: {
+    powerRange?: [number, number];
+    costRange?: [number, number];
+    efficiencyRange?: [number, number];
+  };
 }
 
 interface AddressScanModalProps {
@@ -65,7 +74,8 @@ export const AddressScanModal = ({ isOpen, onClose, onScanComplete }: AddressSca
       }
 
       // Convert AI recommendations to component format
-      const components: Component[] = data.recommendations?.map((rec: any) => ({
+      const components: Component[] = data.recommendations?.map((rec: any, index: number) => ({
+        id: `scan-${Date.now()}-${index}`,
         type: rec.type,
         name: rec.name,
         power: rec.power || 0,
@@ -73,6 +83,10 @@ export const AddressScanModal = ({ isOpen, onClose, onScanComplete }: AddressSca
         count: rec.count || 1,
         emissions: rec.type === 'solar' ? 0 : rec.type === 'wind' ? 0.1 : 2.5,
         reliability: rec.type === 'battery' ? 95 : rec.type === 'generator' ? 90 : 85,
+        efficiency: rec.efficiency,
+        capacity: rec.capacity,
+        customizable: false,
+        customOptions: undefined
       })) || [];
 
       // Save scan to database

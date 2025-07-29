@@ -22,13 +22,21 @@ import {
 
 interface Component {
   id: string;
-  type: 'solar' | 'wind' | 'battery' | 'generator';
+  type: 'solar' | 'wind' | 'battery' | 'generator' | 'hydro' | 'grid' | 'load' | 'inverter' | 'geothermal' | 'biomass';
   name: string;
   power: number;
   cost: number;
   emissions: number;
   reliability: number;
   count: number;
+  efficiency?: number;
+  capacity?: number;
+  customizable: boolean;
+  customOptions?: {
+    powerRange?: [number, number];
+    costRange?: [number, number];
+    efficiencyRange?: [number, number];
+  };
 }
 
 interface Location {
@@ -216,7 +224,11 @@ Please respond with ONLY a JSON object in this exact format:
       cost: comp.cost || 0,
       emissions: comp.emissions || 0,
       reliability: comp.reliability || 85,
-      count: comp.count || 1
+      count: comp.count || 1,
+      efficiency: comp.efficiency,
+      capacity: comp.capacity,
+      customizable: false,
+      customOptions: undefined
     }));
 
     onComponentsGenerated(components);

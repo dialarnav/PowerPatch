@@ -9,6 +9,7 @@ import LocationSelector from "@/components/LocationSelector";
 import AIAssistant from "@/components/AIAssistant";
 import { AuthModal } from "@/components/AuthModal";
 import { AddressScanModal } from "@/components/AddressScanModal";
+import { ComponentCustomizeModal } from "@/components/ComponentCustomizeModal";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   Sun, 
@@ -27,7 +28,15 @@ import {
   MapPin,
   Scan,
   User,
-  LogOut
+  LogOut,
+  Droplets,
+  Fuel,
+  Grid3X3,
+  Flame,
+  Lightbulb,
+  Factory,
+  Settings,
+  Edit3
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -45,13 +54,21 @@ interface Location {
 
 interface Component {
   id: string;
-  type: 'solar' | 'wind' | 'battery' | 'generator';
+  type: 'solar' | 'wind' | 'battery' | 'generator' | 'hydro' | 'grid' | 'load' | 'inverter' | 'geothermal' | 'biomass';
   name: string;
   power: number; // kW
   cost: number; // USD
   emissions: number; // kg CO2/year
   reliability: number; // 0-100%
   count: number;
+  efficiency?: number; // 0-100%
+  capacity?: number; // kWh for storage
+  customizable: boolean;
+  customOptions?: {
+    powerRange?: [number, number];
+    costRange?: [number, number];
+    efficiencyRange?: [number, number];
+  };
 }
 
 interface GridStats {
@@ -65,35 +82,149 @@ interface GridStats {
 const availableComponents: Omit<Component, 'id' | 'count'>[] = [
   {
     type: 'solar',
-    name: 'Solar Panel (5kW)',
+    name: 'Solar Panel Array',
     power: 5,
     cost: 3000,
     emissions: 0,
-    reliability: 85
+    reliability: 85,
+    efficiency: 22,
+    customizable: true,
+    customOptions: {
+      powerRange: [1, 50],
+      costRange: [500, 25000],
+      efficiencyRange: [15, 25]
+    }
   },
   {
     type: 'wind',
-    name: 'Wind Turbine (10kW)',
+    name: 'Wind Turbine',
     power: 10,
     cost: 8000,
     emissions: 0,
-    reliability: 70
+    reliability: 70,
+    efficiency: 35,
+    customizable: true,
+    customOptions: {
+      powerRange: [2, 100],
+      costRange: [3000, 80000],
+      efficiencyRange: [25, 45]
+    }
   },
   {
     type: 'battery',
-    name: 'Battery Storage (20kWh)',
+    name: 'Battery Storage',
     power: 0,
     cost: 5000,
     emissions: 0,
-    reliability: 95
+    reliability: 95,
+    efficiency: 95,
+    capacity: 20,
+    customizable: true,
+    customOptions: {
+      costRange: [2000, 50000],
+      efficiencyRange: [85, 98]
+    }
   },
   {
     type: 'generator',
-    name: 'Backup Generator (15kW)',
+    name: 'Backup Generator',
     power: 15,
     cost: 2000,
     emissions: 1200,
-    reliability: 99
+    reliability: 99,
+    efficiency: 40,
+    customizable: true,
+    customOptions: {
+      powerRange: [5, 200],
+      costRange: [1000, 25000],
+      efficiencyRange: [25, 50]
+    }
+  },
+  {
+    type: 'hydro',
+    name: 'Micro Hydro Turbine',
+    power: 8,
+    cost: 12000,
+    emissions: 0,
+    reliability: 90,
+    efficiency: 80,
+    customizable: true,
+    customOptions: {
+      powerRange: [2, 30],
+      costRange: [5000, 40000],
+      efficiencyRange: [70, 90]
+    }
+  },
+  {
+    type: 'grid',
+    name: 'Grid Connection',
+    power: 50,
+    cost: 1000,
+    emissions: 400,
+    reliability: 99,
+    efficiency: 95,
+    customizable: true,
+    customOptions: {
+      powerRange: [10, 500],
+      costRange: [500, 10000]
+    }
+  },
+  {
+    type: 'load',
+    name: 'Electrical Load',
+    power: -20,
+    cost: 0,
+    emissions: 0,
+    reliability: 100,
+    efficiency: 100,
+    customizable: true,
+    customOptions: {
+      powerRange: [-200, -1]
+    }
+  },
+  {
+    type: 'inverter',
+    name: 'Power Inverter',
+    power: 0,
+    cost: 1500,
+    emissions: 0,
+    reliability: 96,
+    efficiency: 95,
+    customizable: true,
+    customOptions: {
+      costRange: [500, 8000],
+      efficiencyRange: [85, 98]
+    }
+  },
+  {
+    type: 'geothermal',
+    name: 'Geothermal Heat Pump',
+    power: 12,
+    cost: 18000,
+    emissions: 0,
+    reliability: 95,
+    efficiency: 400,
+    customizable: true,
+    customOptions: {
+      powerRange: [3, 50],
+      costRange: [8000, 60000],
+      efficiencyRange: [300, 500]
+    }
+  },
+  {
+    type: 'biomass',
+    name: 'Biomass Generator',
+    power: 25,
+    cost: 15000,
+    emissions: 800,
+    reliability: 85,
+    efficiency: 25,
+    customizable: true,
+    customOptions: {
+      powerRange: [5, 100],
+      costRange: [8000, 80000],
+      efficiencyRange: [20, 35]
+    }
   }
 ];
 
@@ -103,6 +234,7 @@ const Simulator = () => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAddressScanModal, setShowAddressScanModal] = useState(false);
+  const [customizeComponent, setCustomizeComponent] = useState<Component | null>(null);
   const { toast } = useToast();
   const { user, requireAuth } = useAuth();
 
@@ -112,19 +244,38 @@ const Simulator = () => {
   }, [selectedLocation]);
 
   const addComponent = useCallback((component: Omit<Component, 'id' | 'count'>) => {
-    const adjustedCost = getLocationAdjustedCost(component.cost);
-    const newComponent: Component = {
-      ...component,
-      id: Math.random().toString(36).substr(2, 9),
-      cost: adjustedCost,
-      count: 1
-    };
-    setSelectedComponents(prev => [...prev, newComponent]);
-    toast({
-      title: "Component Added",
-      description: `${component.name} added${selectedLocation ? ` (${selectedLocation.country} pricing)` : ''}.`,
-    });
+    if (component.customizable) {
+      const newComponent: Component = {
+        ...component,
+        id: Math.random().toString(36).substr(2, 9),
+        cost: getLocationAdjustedCost(component.cost),
+        count: 1
+      };
+      setCustomizeComponent(newComponent);
+    } else {
+      const adjustedCost = getLocationAdjustedCost(component.cost);
+      const newComponent: Component = {
+        ...component,
+        id: Math.random().toString(36).substr(2, 9),
+        cost: adjustedCost,
+        count: 1
+      };
+      setSelectedComponents(prev => [...prev, newComponent]);
+      toast({
+        title: "Component Added",
+        description: `${component.name} added${selectedLocation ? ` (${selectedLocation.country} pricing)` : ''}.`,
+      });
+    }
   }, [toast, getLocationAdjustedCost, selectedLocation]);
+
+  const confirmCustomizedComponent = useCallback((component: Component) => {
+    setSelectedComponents(prev => [...prev, component]);
+    setCustomizeComponent(null);
+    toast({
+      title: "Customized Component Added",
+      description: `${component.name} added with custom specifications.`,
+    });
+  }, [toast]);
 
   const removeComponent = useCallback((id: string) => {
     setSelectedComponents(prev => prev.filter(comp => comp.id !== id));
@@ -272,6 +423,12 @@ const Simulator = () => {
       case 'wind': return <Wind className="w-8 h-8 text-energy-blue" />;
       case 'battery': return <Battery className="w-8 h-8 text-energy-green" />;
       case 'generator': return <Zap className="w-8 h-8 text-energy-orange" />;
+      case 'hydro': return <Droplets className="w-8 h-8 text-blue-500" />;
+      case 'grid': return <Grid3X3 className="w-8 h-8 text-gray-500" />;
+      case 'load': return <Lightbulb className="w-8 h-8 text-yellow-500" />;
+      case 'inverter': return <Settings className="w-8 h-8 text-purple-500" />;
+      case 'geothermal': return <Flame className="w-8 h-8 text-red-500" />;
+      case 'biomass': return <Factory className="w-8 h-8 text-green-600" />;
       default: return <Zap className="w-8 h-8" />;
     }
   };
@@ -376,27 +533,41 @@ const Simulator = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 gap-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Base Cost:</span>
-                            <span className="font-medium">${component.cost.toLocaleString()}</span>
-                          </div>
-                          {selectedLocation && costDifference !== 0 && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Local Cost:</span>
-                              <span className={`font-medium ${costDifference > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                ${adjustedCost.toLocaleString()}
-                                <span className="text-xs ml-1">
-                                  ({costDifference > 0 ? '+' : ''}${costDifference.toLocaleString()})
-                                </span>
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Reliability:</span>
-                            <span className="font-medium">{component.reliability}%</span>
-                          </div>
-                        </div>
+                         <div className="grid grid-cols-1 gap-2 text-xs">
+                           <div className="flex justify-between">
+                             <span className="text-muted-foreground">Base Cost:</span>
+                             <span className="font-medium">${component.cost.toLocaleString()}</span>
+                           </div>
+                           {selectedLocation && costDifference !== 0 && (
+                             <div className="flex justify-between">
+                               <span className="text-muted-foreground">Local Cost:</span>
+                               <span className={`font-medium ${costDifference > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                 ${adjustedCost.toLocaleString()}
+                                 <span className="text-xs ml-1">
+                                   ({costDifference > 0 ? '+' : ''}${costDifference.toLocaleString()})
+                                 </span>
+                               </span>
+                             </div>
+                           )}
+                           <div className="flex justify-between">
+                             <span className="text-muted-foreground">Reliability:</span>
+                             <span className="font-medium">{component.reliability}%</span>
+                           </div>
+                           {component.efficiency && (
+                             <div className="flex justify-between">
+                               <span className="text-muted-foreground">Efficiency:</span>
+                               <span className="font-medium">{component.efficiency}%</span>
+                             </div>
+                           )}
+                           {component.customizable && (
+                             <div className="flex items-center justify-center mt-2">
+                               <Badge variant="secondary" className="text-xs">
+                                 <Edit3 className="w-3 h-3 mr-1" />
+                                 Customizable
+                               </Badge>
+                             </div>
+                           )}
+                         </div>
                       </CardContent>
                     </Card>
                   );
@@ -782,6 +953,13 @@ const Simulator = () => {
         isOpen={showAddressScanModal}
         onClose={() => setShowAddressScanModal(false)}
         onScanComplete={handleScanComplete}
+      />
+
+      <ComponentCustomizeModal
+        component={customizeComponent}
+        isOpen={!!customizeComponent}
+        onClose={() => setCustomizeComponent(null)}
+        onConfirm={confirmCustomizedComponent}
       />
     </div>
   );
