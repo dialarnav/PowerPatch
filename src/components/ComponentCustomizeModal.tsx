@@ -75,42 +75,91 @@ export const ComponentCustomizeModal = ({
   };
 
   const handleEstimateForLocation = () => {
-    if (!location || !customizedComponent) return;
+    if (!location || !customizedComponent) {
+      console.log('Missing location or component:', { location, customizedComponent });
+      return;
+    }
 
-    // Location-based efficiency and power estimates
+    console.log('Estimating for location:', location);
+    console.log('Component type:', customizedComponent.type);
+
+    // Location-based efficiency and power estimates with more comprehensive matching
     const locationFactors = {
       solar: {
-        efficiency: location.region.includes('Desert') || location.country === 'Australia' ? 25 : 
-                   location.country === 'Germany' || location.country === 'UK' ? 18 : 22,
-        powerMultiplier: location.region.includes('Sunny') ? 1.2 : 
-                        location.country === 'Norway' ? 0.8 : 1.0
+        efficiency: location.country === 'Australia' || location.region.toLowerCase().includes('desert') || 
+                   location.region.toLowerCase().includes('sunny') ? 25 : 
+                   location.country === 'Germany' || location.country === 'UK' || 
+                   location.country === 'Norway' ? 18 : 22,
+        powerMultiplier: location.region.toLowerCase().includes('sunny') || 
+                        location.country === 'Australia' ? 1.2 : 
+                        location.country === 'Norway' || location.country === 'UK' ? 0.8 : 1.0
       },
       wind: {
-        efficiency: location.region.includes('Coastal') || location.country === 'Denmark' ? 42 : 
-                   location.region.includes('Mountain') ? 38 : 35,
-        powerMultiplier: location.region.includes('Windy') ? 1.3 : 1.0
+        efficiency: location.region.toLowerCase().includes('coastal') || 
+                   location.country === 'Denmark' || location.region.toLowerCase().includes('windy') ? 42 : 
+                   location.region.toLowerCase().includes('mountain') ? 38 : 35,
+        powerMultiplier: location.region.toLowerCase().includes('windy') || 
+                        location.region.toLowerCase().includes('coastal') ? 1.3 : 1.0
+      },
+      battery: {
+        efficiency: 95, // Standard efficiency
+        powerMultiplier: 1.0
+      },
+      generator: {
+        efficiency: location.country === 'Germany' ? 45 : 40, // Better tech in some regions
+        powerMultiplier: 1.0
       },
       hydro: {
-        efficiency: location.region.includes('River') || location.country === 'Norway' ? 85 : 75,
-        powerMultiplier: location.region.includes('Mountain') ? 1.2 : 0.8
+        efficiency: location.region.toLowerCase().includes('river') || 
+                   location.country === 'Norway' ? 85 : 75,
+        powerMultiplier: location.region.toLowerCase().includes('mountain') ? 1.2 : 0.8
+      },
+      grid: {
+        efficiency: 95,
+        powerMultiplier: 1.0
+      },
+      load: {
+        efficiency: 100,
+        powerMultiplier: 1.0
+      },
+      inverter: {
+        efficiency: location.country === 'Germany' || location.country === 'Japan' ? 97 : 95,
+        powerMultiplier: 1.0
       },
       geothermal: {
-        efficiency: location.country === 'Iceland' || location.region.includes('Volcanic') ? 450 : 350,
-        powerMultiplier: location.region.includes('Geothermal') ? 1.5 : 0.7
+        efficiency: location.country === 'Iceland' || location.region.toLowerCase().includes('volcanic') ? 450 : 350,
+        powerMultiplier: location.region.toLowerCase().includes('geothermal') || 
+                        location.country === 'Iceland' ? 1.5 : 0.7
+      },
+      biomass: {
+        efficiency: location.country === 'Finland' || location.region.toLowerCase().includes('forest') ? 30 : 25,
+        powerMultiplier: location.region.toLowerCase().includes('forest') ? 1.2 : 1.0
       }
     };
 
     const factor = locationFactors[customizedComponent.type as keyof typeof locationFactors];
     
+    console.log('Location factor:', factor);
+    
     if (factor) {
       const estimatedEfficiency = factor.efficiency;
-      const estimatedPower = Math.round(customizedComponent.power * factor.powerMultiplier);
+      let estimatedPower = Math.round(customizedComponent.power * factor.powerMultiplier);
+      
+      // Ensure power stays within valid range
+      if (customizedComponent.customOptions?.powerRange) {
+        const [minPower, maxPower] = customizedComponent.customOptions.powerRange;
+        estimatedPower = Math.max(minPower, Math.min(maxPower, estimatedPower));
+      }
+      
+      console.log('Updating component with:', { estimatedEfficiency, estimatedPower });
       
       setCustomizedComponent(prev => prev ? {
         ...prev,
         efficiency: estimatedEfficiency,
-        power: Math.max(estimatedPower, customizedComponent.customOptions?.powerRange?.[0] || 1)
+        power: estimatedPower
       } : null);
+    } else {
+      console.log('No factor found for component type:', customizedComponent.type);
     }
   };
 
