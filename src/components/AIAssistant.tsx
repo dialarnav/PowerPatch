@@ -351,26 +351,34 @@ Please respond with ONLY a JSON object in this exact format:
               <span className="font-medium">AI Recommendation</span>
             </div>
             
-            <p className="text-sm text-muted-foreground">{lastSuggestion.reasoning}</p>
+            <p className="text-sm text-muted-foreground">
+              {typeof lastSuggestion.reasoning === 'string' ? lastSuggestion.reasoning : JSON.stringify(lastSuggestion.reasoning)}
+            </p>
             
             {/* Key Metrics */}
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div className="text-center">
-                <div className="font-medium text-green-600">${lastSuggestion.cost?.toLocaleString()}</div>
+                <div className="font-medium text-green-600">
+                  ${typeof lastSuggestion.cost === 'number' ? lastSuggestion.cost?.toLocaleString() : 'N/A'}
+                </div>
                 <div className="text-muted-foreground">Total Cost</div>
               </div>
               <div className="text-center">
-                <div className="font-medium text-blue-600">{lastSuggestion.reliability}%</div>
+                <div className="font-medium text-blue-600">
+                  {typeof lastSuggestion.reliability === 'number' ? lastSuggestion.reliability : 'N/A'}%
+                </div>
                 <div className="text-muted-foreground">Reliability</div>
               </div>
               <div className="text-center">
-                <div className="font-medium text-orange-600">{lastSuggestion.emissions}</div>
+                <div className="font-medium text-orange-600">
+                  {typeof lastSuggestion.emissions === 'number' ? lastSuggestion.emissions : 'N/A'}
+                </div>
                 <div className="text-muted-foreground">kg CO₂/year</div>
               </div>
             </div>
 
             {/* Components */}
-            {lastSuggestion.components && (
+            {lastSuggestion.components && Array.isArray(lastSuggestion.components) && (
               <div className="space-y-2">
                 <div className="font-medium text-sm">Recommended Components:</div>
                 {lastSuggestion.components.map((comp: any, index: number) => (
@@ -379,9 +387,9 @@ Please respond with ONLY a JSON object in this exact format:
                     {comp.type === 'wind' && <Wind className="w-4 h-4 text-blue-500" />}
                     {comp.type === 'battery' && <Battery className="w-4 h-4 text-green-500" />}
                     {comp.type === 'generator' && <Zap className="w-4 h-4 text-red-500" />}
-                    <span>{comp.count}x {comp.name}</span>
+                    <span>{comp.count || 1}x {comp.name || 'Unknown Component'}</span>
                     <Badge variant="secondary" className="text-xs">
-                      ${comp.cost?.toLocaleString()}
+                      ${typeof comp.cost === 'number' ? comp.cost?.toLocaleString() : 'N/A'}
                     </Badge>
                   </div>
                 ))}
@@ -389,12 +397,12 @@ Please respond with ONLY a JSON object in this exact format:
             )}
 
             {/* Recommendations */}
-            {lastSuggestion.recommendations && (
+            {lastSuggestion.recommendations && Array.isArray(lastSuggestion.recommendations) && (
               <div className="space-y-2">
                 <div className="font-medium text-sm">Key Recommendations:</div>
                 <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                  {lastSuggestion.recommendations.map((rec: string, index: number) => (
-                    <li key={index}>{rec}</li>
+                  {lastSuggestion.recommendations.map((rec: any, index: number) => (
+                    <li key={index}>{typeof rec === 'string' ? rec : JSON.stringify(rec)}</li>
                   ))}
                 </ul>
               </div>
